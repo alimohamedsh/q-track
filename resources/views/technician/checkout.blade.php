@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>إنهاء الزيارة - {{ config('app.name') }}</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .btn-submit { background: #f59e0b; }
+        .btn-submit:hover { background: #d97706; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-6 font-sans">
+    <div class="max-w-xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <a href="{{ route('technician.index') }}" class="text-amber-600 hover:underline">← العودة للوحة التحكم</a>
+            <form action="{{ route('logout') }}" method="POST" class="inline">
+                @csrf
+                <button type="submit" class="text-sm text-gray-600 hover:text-gray-800">تسجيل الخروج</button>
+            </form>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">إنهاء المهمة (Check-out)</h1>
+        <p class="text-gray-600 mb-6">التذكرة: {{ $visit->ticket->ticket_number }}</p>
+
+        <form id="checkout-form" action="{{ route('technician.check-out') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+            @csrf
+            <input type="hidden" name="visit_id" value="{{ $visit->id }}">
+            <input type="hidden" name="lat" id="geo-lat">
+            <input type="hidden" name="lng" id="geo-lng">
+
+            @if($visit->ticket->tasks->isNotEmpty())
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">حالة كل مهمة</label>
+                    <div class="space-y-3">
+                        @foreach($visit->ticket->tasks as $task)
+                            <div class="p-3 border border-gray-200 rounded-lg">
+                                <p class="font-medium text-gray-800 mb-2">{{ $task->description }}</p>
+                                <select name="tasks[{{ $task->id }}][status]" required class="w-full rounded-lg border-gray-300 mb-2">
+                                    <option value="completed">تمت</option>
+                                    <option value="incomplete">لم تتم</option>
+                                </select>
+                                <input type="text" name="tasks[{{ $task->id }}][comment]" placeholder="تعليق (مثال: ناقص كبلات)" class="w-full rounded-lg border-gray-300" maxlength="500">
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">حالة الزيارة</label>
+                <select name="status" id="status" required class="w-full rounded-lg border-gray-300">
+                    <option value="completed">مكتملة</option>
+                    <option value="incomplete">غير مكتملة</option>
+                </select>
+            </div>
+
+            <div id="failure-reason-wrap" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">سبب الفشل <span class="text-red-500">*</span></label>
+                <input type="text" name="failure_reason" class="w-full rounded-lg border-gray-300" maxlength="500">
+                @error('failure_reason')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ملاحظات</label>
+                <textarea name="notes" rows="3" class="w-full rounded-lg border-gray-300" maxlength="1000"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">صور <span class="text-red-500">*</span></label>
+                <input type="file" name="images[]" multiple accept="image/jpeg,image/jpg,image/png,image/webp" class="w-full text-sm" required>
+                <p class="text-xs text-gray-500 mt-1">صورة واحدة على الأقل. PNG, JPG, WEBP. الحد الأقصى 2MB</p>
+                @error('images')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full px-6 py-3 rounded-lg font-semibold text-white btn-submit transition">
+                إنهاء الزيارة
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('status').addEventListener('change', function() {
+            document.getElementById('failure-reason-wrap').classList.toggle('hidden', this.value !== 'incomplete');
+            document.querySelector('[name="failure_reason"]').required = this.value === 'incomplete';
+        });
+
+        document.getElementById('checkout-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'جاري جلب الموقع...';
+
+            if (!navigator.geolocation) {
+                alert('المتصفح لا يدعم تحديد الموقع.');
+                btn.disabled = false;
+                btn.textContent = 'إنهاء الزيارة';
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    document.getElementById('geo-lat').value = pos.coords.latitude;
+                    document.getElementById('geo-lng').value = pos.coords.longitude;
+                    this.submit();
+                },
+                (err) => {
+                    alert('تعذر الحصول على الموقع: ' + (err.message || 'يرجى السماح بالوصول للموقع وإعادة المحاولة.'));
+                    btn.disabled = false;
+                    btn.textContent = 'إنهاء الزيارة';
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        });
+
+        document.getElementById('status').dispatchEvent(new Event('change'));
+    </script>
+</body>
+</html>

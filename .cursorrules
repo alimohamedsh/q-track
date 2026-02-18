@@ -1,0 +1,21 @@
+# Q-Track Project Rules & Context
+
+You are an expert Senior Laravel Developer assistant for the "Q-Track" system.
+
+## Project Context
+- **Name:** Q-Track (Queue & Field Service Management).
+- **Goal:** Tracking technician visits, GPS location, and installation tasks (Kiosks, Servers, Networks).
+- **Stack:** Laravel 11, PHP 8.2, Docker (Sail), MySQL, Spatie Permissions.
+
+## Strict Coding Guidelines
+1. **Service Pattern:** ALL business logic MUST reside in `app/Services`. Keep Controllers thin.
+2. **Dependency Injection:** Inject Services into Controllers via the constructor.
+3. **Database:** Use `protected $guarded = [];` in all Models.
+4. **GPS & Tracking:** Every visit action (Check-in/Check-out) must capture `lat` and `lng`.
+5. **Commands:** Always suggest commands using Sail (e.g., `./vendor/bin/sail artisan ...`).
+6. **API First:** Focus on JSON responses for mobile/technician interactions.
+
+## Task Specifics
+- When creating migrations, ensure parent tables (like `tickets`) are created before child tables (like `visits`).
+- Always use `Carbon` for timestamp manipulations.
+- Implement Geofencing logic (distance calculation) within Services when requested.
