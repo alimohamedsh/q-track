@@ -13,6 +13,10 @@ class EditTicket extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('details')
+                ->label('تفاصيل التذكرة')
+                ->icon('heroicon-o-document-text')
+                ->url(fn () => TicketResource::getUrl('details', ['record' => $this->record])),
             Actions\DeleteAction::make(),
         ];
     }

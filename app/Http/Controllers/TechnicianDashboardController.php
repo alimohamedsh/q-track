@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
 /**
@@ -26,17 +27,23 @@ class TechnicianDashboardController extends Controller
     ) {}
 
     /**
-     * عرض التذاكر المفتوحة المكلف بها الفني فقط (حالة open أو in_progress)
-     * مع منع الكاش حتى لا يرى الفني نسخة قديمة بعد Check-in
+     * عرض التذاكر المفتوحة المكلف بها الفني والتي ما زالت تحتاج منه إجراء (زيارة مفتوحة أو لم يبدأ بعد).
+     * بعد إنهاء الزيارة (Check-out) التذكرة تختفي من القائمة.
      */
     public function index(): Response
     {
-        $tickets = Ticket::where('assigned_to', Auth::id())
+        $userId = Auth::id();
+        $tickets = Ticket::where('assigned_to', $userId)
             ->whereIn('status', ['open', 'in_progress'])
+            ->where(function ($q) use ($userId) {
+                // إما لا توجد أي زيارة للفني على التذكرة (لم يضغط «في الطريق» بعد)، أو توجد زيارة مفتوحة (بدون check_out_at)
+                $q->whereDoesntHave('visits', fn ($v) => $v->where('user_id', $userId))
+                    ->orWhereHas('visits', fn ($v) => $v->where('user_id', $userId)->whereNull('check_out_at'));
+            })
             ->with([
                 'tasks',
-                // نحمّل الزيارات غير المنتهية لهذا الفني فقط (عشان نعرف نعرض "إنهاء المهمة" أو "تسجيل دخول")
-                'visits' => fn ($q) => $q->where('user_id', Auth::id())->whereNull('check_out_at')->where('status', 'incomplete'),
+                'requiredItems',
+                'visits' => fn ($q) => $q->where('user_id', $userId)->whereNull('check_out_at')->where('status', 'incomplete'),
             ])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -101,7 +108,7 @@ class TechnicianDashboardController extends Controller
     }
 
     /**
-     * إنهاء المهمة (Check-out): يستقبل visit_id، إحداثيات GPS، حالة الزيارة، نتائج المهام، وملف صور (مطلوب صورة واحدة على الأقل)
+     * إنهاء المهمة (Check-out): يستقبل visit_id، إحداثيات GPS، حالة الزيارة، نتائج المهام، وملف صور (اختياري)
      */
     public function checkOut(Request $request): RedirectResponse
     {
@@ -111,21 +118,15 @@ class TechnicianDashboardController extends Controller
             'lng'            => 'required|numeric|between:-180,180',
             'status'         => 'required|in:completed,incomplete',
             'notes'          => 'nullable|string|max:1000',
-            'failure_reason' => 'nullable|string|max:500|required_if:status,incomplete',
+            'failure_reason_id' => 'nullable|exists:visit_failure_reasons,id|required_if:status,incomplete',
+            'failure_reason'   => 'nullable|string|max:500',
             'images'         => 'nullable|array',
-            'images.*'       => 'image|mimes:jpeg,jpg,png,webp|max:2048',
+            'images.*'       => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
         ], [
-            'failure_reason.required_if' => 'يجب تحديد سبب الفشل عند اختيار حالة غير مكتملة',
+            'failure_reason_id.required_if' => 'يجب اختيار سبب الفشل عند اختيار حالة غير مكتملة',
         ]);
 
-        $images = [];
-        if ($request->hasFile('images')) {
-            $files = $request->file('images');
-            $images = is_array($files) ? $files : [$files];
-        }
-        if (empty($images)) {
-            return redirect()->back()->withInput()->withErrors(['images' => 'يجب رفع صورة واحدة على الأقل عند إنهاء الزيارة']);
-        }
+        $images = $this->collectValidImages($request);
 
         $taskResults = [];
         foreach ($request->input('tasks', []) as $taskId => $data) {
@@ -146,7 +147,8 @@ class TechnicianDashboardController extends Controller
                     'lng'            => (float) $request->lng,
                     'status'         => $request->status,
                     'notes'          => $request->notes,
-                    'failure_reason' => $request->failure_reason,
+                    'failure_reason_id' => $request->failure_reason_id,
+                    'failure_reason'   => $request->failure_reason,
                     'task_results'   => $taskResults,
                 ],
                 $images
@@ -180,6 +182,30 @@ class TechnicianDashboardController extends Controller
         }
 
         $visit->load('ticket.tasks');
-        return view('technician.checkout', compact('visit'));
+        $failureReasons = \App\Models\VisitFailureReason::orderBy('sort_order')->get();
+        return view('technician.checkout', compact('visit', 'failureReasons'));
+    }
+
+    /**
+     * يجمع فقط الملفات الصالحة (صور) من الطلب مع حد أقصى 10 ملفات لتفادي المشاكل
+     */
+    private function collectValidImages(Request $request): array
+    {
+        if (! $request->hasFile('images')) {
+            return [];
+        }
+        $files = $request->file('images');
+        $files = is_array($files) ? $files : [$files];
+        $valid = [];
+        $maxFiles = 10;
+        foreach ($files as $file) {
+            if (count($valid) >= $maxFiles) {
+                break;
+            }
+            if ($file instanceof UploadedFile && $file->isValid()) {
+                $valid[] = $file;
+            }
+        }
+        return $valid;
     }
 }

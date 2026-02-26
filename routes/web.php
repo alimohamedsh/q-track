@@ -12,9 +12,12 @@ use Illuminate\Support\Facades\Route;
 | الصفحة الرئيسية، تتبع التذكرة للعميل، تسجيل الخروج، ولوحة الفني.
 */
 
-// الصفحة الرئيسية للموقع
+// مسار login المطلوب لوسيط المصادقة (auth middleware) — يوجّه لصفحة دخول Filament
+Route::get('/login', fn () => redirect()->route('filament.admin.auth.login'))->name('login');
+
+// الصفحة الرئيسية: توجيه مباشر إلى صفحة تسجيل الدخول (لوحة الأدمن Filament)
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('filament.admin.auth.login');
 });
 
 // تتبع التذكرة: العميل يفتح الرابط /track/{uuid} لمتابعة حالته (بدون تسجيل دخول)

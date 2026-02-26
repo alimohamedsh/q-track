@@ -185,12 +185,13 @@ class VisitService
 
         // تحديث بيانات الزيارة
         $visit->update([
-            'check_out_at'     => Carbon::now(),
-            'end_lat'          => $data['lat'],
-            'end_lng'          => $data['lng'],
-            'status'           => $status,
-            'technician_notes' => $data['notes'] ?? '',
-            'failure_reason'   => $data['failure_reason'] ?? null,
+            'check_out_at'       => Carbon::now(),
+            'end_lat'            => $data['lat'],
+            'end_lng'            => $data['lng'],
+            'status'             => $status,
+            'technician_notes'   => $data['notes'] ?? '',
+            'failure_reason_id'  => $data['failure_reason_id'] ?? null,
+            'failure_reason'     => $data['failure_reason'] ?? null,
         ]);
 
         // تحديث حالة التذكرة: Completed → closed، Incomplete → تبقى open
@@ -212,16 +213,23 @@ class VisitService
             );
         }
 
-        // حفظ الصور المرفوعة (phase = check_out)
-        if (!empty($images)) {
+        // حفظ الصور المرفوعة (اختياري — phase = check_out)
+        if (! empty($images)) {
             foreach ($images as $image) {
-                if ($image instanceof UploadedFile && $image->isValid()) {
+                if (! $image instanceof UploadedFile || ! $image->isValid()) {
+                    continue;
+                }
+                try {
                     $filePath = $image->store('visits/photos', 'public');
-                    $visit->attachments()->create([
-                        'file_path' => $filePath,
-                        'file_type' => 'image',
-                        'phase'     => 'check_out',
-                    ]);
+                    if ($filePath) {
+                        $visit->attachments()->create([
+                            'file_path' => $filePath,
+                            'file_type' => 'image',
+                            'phase'     => 'check_out',
+                        ]);
+                    }
+                } catch (\Throwable) {
+                    // تجاهل فشل حفظ صورة واحدة دون إيقاف إنهاء الزيارة
                 }
             }
         }

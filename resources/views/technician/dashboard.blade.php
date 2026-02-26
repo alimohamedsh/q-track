@@ -49,14 +49,31 @@
             <div class="mb-4 p-4 bg-red-100 text-red-800 rounded-lg">{{ session('error') }}</div>
         @endif
 
+        {{-- مؤشرات سريعة: عدد التذاكر المفتوحة وتذاكر اليوم --}}
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <p class="text-xs text-gray-500">إجمالي التذاكر المفتوحة</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $tickets->count() }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <p class="text-xs text-gray-500">تذاكر أُضيفت اليوم</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $tickets->filter(fn($t) => $t->created_at->isToday())->count() }}</p>
+            </div>
+        </div>
+
         {{-- كل تذكرة: لا زيارة → "في الطريق" | زيارة بدون arrived_at → "وصلت وبدء العمل" (GPS) | زيارة بـ arrived_at → "إنهاء المهمة" --}}
         @forelse($tickets as $ticket)
             @php $openVisit = $ticket->visits->first(); @endphp
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
                 <div class="flex flex-col gap-3">
-                    <div>
-                        <span class="text-sm font-medium text-gray-500">رقم التذكرة</span>
-                        <p class="text-lg font-bold text-gray-900">{{ $ticket->ticket_number }}</p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">رقم التذكرة</span>
+                            <p class="text-lg font-bold text-gray-900">{{ $ticket->ticket_number }}</p>
+                        </div>
+                        @if($ticket->due_date && $ticket->due_date->isPast())
+                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full">متأخرة</span>
+                        @endif
                     </div>
                     <div>
                         <span class="text-sm font-medium text-gray-500">اسم العميل</span>
@@ -82,6 +99,20 @@
                             <ul class="list-disc list-inside text-gray-700 mt-1 space-y-0.5">
                                 @foreach($ticket->tasks as $task)
                                     <li>{{ $task->description }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    @if($ticket->requiredItems && $ticket->requiredItems->isNotEmpty())
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">أشياء يجب إحضارها</span>
+                            <ul class="list-disc list-inside text-gray-700 mt-1 space-y-0.5">
+                                @foreach($ticket->requiredItems as $item)
+                                    <li>
+                                        {{ $item->name }}
+                                        @if($item->quantity > 1) (×{{ $item->quantity }}) @endif
+                                        @if($item->notes) <span class="text-xs text-gray-500">– {{ $item->notes }}</span> @endif
+                                    </li>
                                 @endforeach
                             </ul>
                         </div>

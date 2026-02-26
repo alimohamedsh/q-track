@@ -76,8 +76,16 @@ class TrackingPage extends Component
         ]);
     }
 
+    public function isAdminTrackingView(): bool
+    {
+        return auth()->check()
+            && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'));
+    }
+
     public function render()
     {
-        return view('livewire.tracking-page')->layout('layouts.tracking');
+        return view('livewire.tracking-page', [
+            'isAdminView' => $this->isAdminTrackingView(),
+        ])->layout('layouts.tracking');
     }
 }

@@ -84,9 +84,18 @@
                 </select>
             </div>
 
-            <div id="failure-reason-wrap" class="hidden">
+            <div id="failure-reason-wrap" class="hidden space-y-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">سبب الفشل <span class="text-red-500">*</span></label>
-                <input type="text" name="failure_reason" class="w-full rounded-lg border-gray-300" maxlength="500">
+                <select name="failure_reason_id" class="w-full rounded-lg border-gray-300">
+                    <option value="">اختر السبب</option>
+                    @foreach($failureReasons as $reason)
+                        <option value="{{ $reason->id }}" {{ old('failure_reason_id') == $reason->id ? 'selected' : '' }}>{{ $reason->label }}</option>
+                    @endforeach
+                </select>
+                <input type="text" name="failure_reason" placeholder="تفاصيل إضافية (اختياري)" class="w-full rounded-lg border-gray-300" maxlength="500" value="{{ old('failure_reason') }}">
+                @error('failure_reason_id')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
                 @error('failure_reason')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -98,9 +107,9 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">صور <span class="text-red-500">*</span></label>
-                <input type="file" name="images[]" multiple accept="image/jpeg,image/jpg,image/png,image/webp" class="w-full text-sm" required>
-                <p class="text-xs text-gray-500 mt-1">صورة واحدة على الأقل. PNG, JPG, WEBP. الحد الأقصى 2MB</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">صور (اختياري)</label>
+                <input type="file" name="images[]" multiple accept="image/jpeg,image/jpg,image/png,image/webp" class="w-full text-sm border border-gray-300 rounded-lg p-2">
+                <p class="text-xs text-gray-500 mt-1">يفضّل رفع صور للزيارة. PNG, JPG, WEBP — حتى 10 ميجا للملف، حد أقصى 10 صور.</p>
                 @error('images')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -115,7 +124,7 @@
     <script>
         document.getElementById('status').addEventListener('change', function() {
             document.getElementById('failure-reason-wrap').classList.toggle('hidden', this.value !== 'incomplete');
-            document.querySelector('[name="failure_reason"]').required = this.value === 'incomplete';
+            document.querySelector('[name="failure_reason_id"]').required = this.value === 'incomplete';
         });
 
         // عند الضغط على "إنهاء الزيارة": إن لم تكن lat/lng مملوءتين نطلب الموقع من المتصفح ثم نرسل النموذج

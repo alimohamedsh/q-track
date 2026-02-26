@@ -81,4 +81,12 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketAttachment::class, 'ticket_id');
     }
+
+    /**
+     * متطلبات المشروع (أشياء يجب إحضارها: شاشة، كيسة، إلخ)
+     */
+    public function requiredItems(): HasMany
+    {
+        return $this->hasMany(TicketRequiredItem::class);
+    }
 }

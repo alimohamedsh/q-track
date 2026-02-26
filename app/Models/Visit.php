@@ -10,6 +10,12 @@ class Visit extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'check_in_at'  => 'datetime',
+        'arrived_at'   => 'datetime',
+        'check_out_at' => 'datetime',
+    ];
+
     /**
      * العلاقة مع Ticket
      */
@@ -40,5 +46,10 @@ class Visit extends Model
     public function taskResults(): HasMany
     {
         return $this->hasMany(VisitTaskResult::class);
+    }
+
+    public function failureReason(): BelongsTo
+    {
+        return $this->belongsTo(VisitFailureReason::class, 'failure_reason_id');
     }
 }

@@ -22,11 +22,16 @@ class VisitsRelationManager extends RelationManager
                     ->label('الفني المنفذ')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('check_in_at')
-                    ->label('وقت الدخول')
+                    ->label('في الطريق')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('arrived_at')
+                    ->label('وصل وبدء العمل')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('check_out_at')
-                    ->label('وقت الخروج')
+                    ->label('إنهاء الزيارة')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('technician_notes')
