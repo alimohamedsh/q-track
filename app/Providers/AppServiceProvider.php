@@ -20,9 +20,14 @@ class AppServiceProvider extends ServiceProvider
    
      public function boot(): void
      {
-         if (str_contains(request()->getHost(), 'lhr.life')) {
-             \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+         // بنقول للارافيل: لو إحنا مش في بيئة الـ local، اجبر كل الروابط تكون https
+         if (!app()->isLocal()) {
              \Illuminate\Support\Facades\URL::forceScheme('https');
+         }
+     
+         // ده حل إضافي لو ريلواي لسه باعت روابط http في بعض الـ Forms
+         if (app()->environment('production')) {
+             \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
          }
      }
 }
