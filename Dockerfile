@@ -47,6 +47,7 @@ RUN sed -i 's/^listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.
 # Entrypoint: migrate + cache + serve
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+RUN chmod -R 755 public storage
 
 # غير الـ EXPOSE لـ 8080 (البورت المشهور في Railway)
 EXPOSE 8080
