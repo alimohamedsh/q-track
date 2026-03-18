@@ -1,0 +1,4 @@
+{"sessionId":"7d1927","hypothesisId":"H5","location":"AppServiceProvider::boot","message":"App boot reached","data":{"cache_driver":"file","php_version":"8.5.2"},"timestamp":1771749558300}
+{"sessionId":"7d1927","hypothesisId":"H5","location":"AppServiceProvider::boot","message":"App boot reached","data":{"cache_driver":"file","php_version":"8.5.2"},"timestamp":1771749558585}
+{"sessionId":"7d1927","hypothesisId":"H5","location":"AppServiceProvider::boot","message":"App boot reached","data":{"cache_driver":"file","php_version":"8.5.2"},"timestamp":1771749568392}
+{"sessionId":"7d1927","hypothesisId":"H5","location":"AppServiceProvider::boot","message":"App boot reached","data":{"cache_driver":"file","php_version":"8.5.2"},"timestamp":1771749582719}
