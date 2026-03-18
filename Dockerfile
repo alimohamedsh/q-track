@@ -48,6 +48,8 @@ RUN sed -i 's/^listen = .*/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 9000
+# غير الـ EXPOSE لـ 8080 (البورت المشهور في Railway)
+EXPOSE 8080
 
-ENTRYPOINT ["/entrypoint.sh"]
+# شغل السيرفر بتاع Laravel مباشرة
+CMD php artisan serve --host=0.0.0.0 --port=8080
