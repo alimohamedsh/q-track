@@ -155,8 +155,8 @@ class VisitService
             throw new VisitException('هذه الزيارة لا تخصك. لا يمكنك إجراء Check-out لها.');
         }
 
-        // التأكد إن الزيارة لسه مفتوحة (incomplete)
-        if ($visit->status === 'completed' || $visit->check_out_at !== null) {
+        // التأكد إن الزيارة لسه مفتوحة (incomplete فقط). completed/failed تعتبر منتهية.
+        if (in_array($visit->status, ['completed', 'failed'], true) || $visit->check_out_at !== null) {
             throw new VisitException('هذه الزيارة مقفولة مسبقاً.');
         }
 
@@ -183,20 +183,24 @@ class VisitService
 
         $status = $data['status'] ?? 'completed';
 
-        // تحديث بيانات الزيارة
+        // عند عدم تنفيذ المهمة: visit=failed، ticket=canceled (تختفي من لوحة الفني)
+        $visitStatus = $status === 'incomplete' ? 'failed' : 'completed';
+
         $visit->update([
-            'check_out_at'       => Carbon::now(),
-            'end_lat'            => $data['lat'],
-            'end_lng'            => $data['lng'],
-            'status'             => $status,
-            'technician_notes'   => $data['notes'] ?? '',
-            'failure_reason_id'  => $data['failure_reason_id'] ?? null,
-            'failure_reason'     => $data['failure_reason'] ?? null,
+            'check_out_at'      => Carbon::now(),
+            'end_lat'           => $data['lat'],
+            'end_lng'           => $data['lng'],
+            'status'            => $visitStatus,
+            'technician_notes'  => $data['notes'] ?? '',
+            'failure_reason_id' => $data['failure_reason_id'] ?? null,
+            'failure_reason'    => $data['failure_reason'] ?? null,
         ]);
 
-        // تحديث حالة التذكرة: Completed → closed، Incomplete → تبقى open
+        // تحديث حالة التذكرة: مكتملة → closed، فشل/غير مكتملة → canceled
         if ($status === 'completed') {
             $visit->ticket->update(['status' => 'closed']);
+        } else {
+            $visit->ticket->update(['status' => 'canceled']);
         }
 
         // حفظ نتائج المهام (visit_task_results)

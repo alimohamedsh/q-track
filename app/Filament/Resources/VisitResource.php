@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\VisitResource\Pages;
+use App\Models\User;
 use App\Models\Visit;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -60,6 +61,7 @@ class VisitResource extends Resource
                         ->options([
                             'incomplete' => 'غير مكتملة',
                             'completed'  => 'مكتملة',
+                            'failed'     => 'فشلت',
                         ])
                         ->default('incomplete')
                         ->required(),
@@ -113,6 +115,23 @@ class VisitResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
+                Forms\Components\Section::make('تقييم العميل للزيارة')
+                    ->schema([
+                        Forms\Components\Placeholder::make('evaluation_technician_rating')
+                            ->label('تقييم الفني (1–5)')
+                            ->content(fn ($record) => $record?->evaluation?->technician_rating ?? '—'),
+                        Forms\Components\Placeholder::make('evaluation_company_rating')
+                            ->label('تقييم الشركة (1–5)')
+                            ->content(fn ($record) => $record?->evaluation?->company_rating ?? '—'),
+                        Forms\Components\Placeholder::make('evaluation_comment')
+                            ->label('تعليق العميل')
+                            ->content(fn ($record) => $record?->evaluation?->comment ?? '—'),
+                        Forms\Components\Placeholder::make('evaluation_created_at')
+                            ->label('تاريخ التقييم')
+                            ->content(fn ($record) => optional($record?->evaluation?->created_at)->format('d/m/Y H:i') ?? '—'),
+                    ])
+                    ->visible(fn ($record) => (bool) $record?->evaluation)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -130,17 +149,30 @@ class VisitResource extends Resource
                 Tables\Columns\TextColumn::make('technician.name')
                     ->label('الفني')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('evaluation.technician_rating')
+                    ->label('تقييم الفني')
+                    ->sortable()
+                    ->badge()
+                    ->color(fn ($value) => match (true) {
+                        $value >= 4     => 'success',
+                        $value === 3    => 'warning',
+                        $value !== null => 'danger',
+                        default         => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'incomplete' => 'غير مكتملة',
                         'completed'  => 'مكتملة',
+                        'failed'     => 'فشلت',
                         default     => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
                         'incomplete' => 'warning',
                         'completed'  => 'success',
+                        'failed'     => 'danger',
                         default     => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('check_in_at')
@@ -158,9 +190,48 @@ class VisitResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('الحالة')
+                    ->options([
+                        'incomplete' => 'غير مكتملة',
+                        'completed'  => 'مكتملة',
+                        'failed'     => 'فشلت',
+                    ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('reassign_ticket')
+                    ->label('إعادة إسناد التذكرة')
+                    ->icon('heroicon-o-user-plus')
+                    ->visible(fn (Visit $record) => in_array($record->status, ['failed', 'incomplete'], true))
+                    ->form([
+                        Forms\Components\Select::make('assigned_to')
+                            ->label('إسناد إلى')
+                            ->options(function () {
+                                return User::query()
+                                    ->whereHas('roles', fn (Builder $q) => $q->where('name', 'technician'))
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->all();
+                            })
+                            ->searchable()
+                            ->required(),
+                        Forms\Components\Select::make('ticket_status')
+                            ->label('حالة التذكرة بعد الإسناد')
+                            ->options([
+                                'open'        => 'مفتوحة',
+                                'in_progress' => 'قيد التنفيذ',
+                                'canceled'    => 'ملغاة',
+                                'closed'      => 'مغلقة',
+                            ])
+                            ->default('open')
+                            ->required(),
+                    ])
+                    ->action(function (Visit $record, array $data): void {
+                        $record->ticket->update([
+                            'assigned_to' => (int) $data['assigned_to'],
+                            'status'      => $data['ticket_status'],
+                        ]);
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

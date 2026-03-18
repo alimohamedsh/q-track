@@ -34,6 +34,19 @@
             </div>
         </div>
 
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+            <p class="text-xs text-gray-500">الفني الحالي</p>
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p class="font-semibold text-gray-900">{{ auth()->user()->name }}</p>
+                    <p class="text-sm text-gray-600">{{ auth()->user()->email }}</p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                    {{ auth()->user()->getRoleNames()->first() ?? 'technician' }}
+                </span>
+            </div>
+        </div>
+
         @if ($errors->any())
             <div class="mb-4 p-4 bg-red-100 text-red-800 rounded-lg">
                 <p class="font-medium mb-2">يرجى تصحيح الأخطاء التالية:</p>
@@ -49,7 +62,7 @@
         @endif
 
         <h1 class="text-2xl font-bold text-gray-800 mb-6">إنهاء المهمة (Check-out)</h1>
-        <p class="text-gray-600 mb-6">التذكرة: {{ $visit->ticket->ticket_number }}</p>
+        <p class="text-gray-600 mb-6">المشروع: {{ $visit->ticket->ticket_number }}</p>
 
         <form id="checkout-form" action="{{ route('technician.check-out', [], false) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
             @csrf

@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class TicketResource extends Resource
@@ -26,11 +27,11 @@ class TicketResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'التذاكر';
+    protected static ?string $navigationLabel = 'المشاريع';
 
-    protected static ?string $modelLabel = 'تذكرة';
+    protected static ?string $modelLabel = 'مشروع';
 
-    protected static ?string $pluralModelLabel = 'التذاكر';
+    protected static ?string $pluralModelLabel = 'المشاريع';
 
     protected static ?string $recordTitleAttribute = 'ticket_number';
 
@@ -46,7 +47,7 @@ class TicketResource extends Resource
                     ->description('بيانات المسؤولين والتاريخ - تظهر عند التعديل')
                     ->schema([
                         Forms\Components\Placeholder::make('creator_info')
-                            ->label('من أنشأ التذكرة')
+                            ->label('من أنشأ المشروع')
                             ->content(fn (Get $get) => User::find($get('created_by'))?->name ?? '—'),
                         Forms\Components\Placeholder::make('tracking_link')
                         ->label('رابط التتبع (للعميل)')
@@ -62,17 +63,22 @@ class TicketResource extends Resource
                     ->columns(3)
                     ->collapsible()
                     ->visibleOn('edit'),
-                Forms\Components\Section::make('بيانات التذكرة')->schema([
+                Forms\Components\Section::make('بيانات المشروع')->schema([
                     Forms\Components\TextInput::make('ticket_number')
-                        ->label('رقم التذكرة')
+                        ->label('رقم المشروع')
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
+                    Forms\Components\TextInput::make('project_name')
+                        ->label('اسم المشروع')
+                        ->required()
+                        ->maxLength(255),
                     Forms\Components\Select::make('type')
                         ->label('النوع')
                         ->options([
-                            'installation' => 'تركيب',
                             'maintenance'  => 'صيانة',
+                            'installation' => 'تركيب',
+                            'visit'        => 'زيارة',
                         ])
                         ->required(),
                     Forms\Components\Select::make('status')
@@ -93,8 +99,17 @@ class TicketResource extends Resource
                             'low'    => 'منخفضة',
                             'medium' => 'متوسطة',
                             'high'   => 'عالية',
+                            'critical' => 'ضرورة قصوى',
                         ])
                         ->default('medium')
+                        ->required(),
+                    Forms\Components\Select::make('warranty_status')
+                        ->label('حالة الضمان')
+                        ->options([
+                            'in_warranty'     => 'داخل الضمان',
+                            'out_of_warranty' => 'خارج الضمان',
+                        ])
+                        ->default('in_warranty')
                         ->required(),
                     Forms\Components\Select::make('assigned_manager_id')
                         ->label('مدير الفنيين')
@@ -224,7 +239,7 @@ class TicketResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('ticket_number')
-                    ->label('رقم التذكرة')
+                    ->label('رقم المشروع')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('type')
@@ -233,11 +248,13 @@ class TicketResource extends Resource
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'installation' => 'تركيب',
                         'maintenance'  => 'صيانة',
+                        'visit'        => 'زيارة',
                         default       => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
                         'installation' => 'success',
                         'maintenance'  => 'warning',
+                        'visit'        => 'info',
                         default       => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('client_name')
@@ -278,9 +295,10 @@ class TicketResource extends Resource
                     ->label('الأولوية')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'low'    => 'منخفضة',
-                        'medium' => 'متوسطة',
-                        'high'   => 'عالية',
+                        'low'      => 'منخفضة',
+                        'medium'   => 'متوسطة',
+                        'high'     => 'عالية',
+                        'critical' => 'ضرورة قصوى',
                         default => $state,
                     }),
                 Tables\Columns\TextColumn::make('last_visit_at')
@@ -382,5 +400,29 @@ class TicketResource extends Resource
             'edit'    => Pages\EditTicket::route('/{record}/edit'),
             'details' => Pages\ViewTicketDetails::route('/{record}/details'),
         ];
+    }
+
+    /**
+     * عنوان السجل في أعلى صفحات Filament (يتضمن اسم المشروع + رقم التذكرة).
+     */
+    public static function getRecordTitle(?Model $record): ?string
+    {
+        if (! $record) {
+            return null;
+        }
+
+        $parts = [];
+
+        if (! empty($record->project_name)) {
+            $parts[] = $record->project_name;
+        } elseif (! empty($record->client_name)) {
+            $parts[] = $record->client_name;
+        }
+
+        if (! empty($record->ticket_number)) {
+            $parts[] = $record->ticket_number;
+        }
+
+        return $parts ? implode(' - ', $parts) : (string) $record->getKey();
     }
 }

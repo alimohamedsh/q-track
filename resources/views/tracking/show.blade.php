@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>تتبع التذكرة - {{ config('app.name') }}</title>
+    <title>تتبع المشروع - {{ config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-6 font-sans">
     <div class="max-w-xl mx-auto">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">تتبع التذكرة</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">تتبع المشروع</h1>
 
         @if (session('success'))
             <div class="mb-4 p-4 bg-green-100 text-green-800 rounded-lg">{{ session('success') }}</div>
@@ -25,7 +25,7 @@
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <div class="mb-4">
-                <span class="text-sm font-medium text-gray-500">رقم التذكرة</span>
+                <span class="text-sm font-medium text-gray-500">رقم المشروع</span>
                 <p class="text-lg font-bold text-gray-900">{{ $ticket->ticket_number }}</p>
             </div>
             <div class="mb-4">

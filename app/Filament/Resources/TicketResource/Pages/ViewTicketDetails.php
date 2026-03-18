@@ -14,14 +14,28 @@ class ViewTicketDetails extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'تفاصيل التذكرة ' . ($this->record->ticket_number ?? '');
+        $parts = [];
+
+        if (! empty($this->record->project_name)) {
+            $parts[] = $this->record->project_name;
+        } elseif (! empty($this->record->client_name)) {
+            $parts[] = $this->record->client_name;
+        }
+
+        if (! empty($this->record->ticket_number)) {
+            $parts[] = $this->record->ticket_number;
+        }
+
+        $suffix = $parts ? ' ' . implode(' - ', $parts) : '';
+
+        return 'تفاصيل المشروع' . $suffix;
     }
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\Action::make('edit')
-                ->label('تعديل التذكرة')
+                ->label('تعديل المشروع')
                 ->icon('heroicon-o-pencil-square')
                 ->url(TicketResource::getUrl('edit', ['record' => $this->record])),
         ];

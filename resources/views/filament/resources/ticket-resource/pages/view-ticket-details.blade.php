@@ -26,14 +26,15 @@
     <x-filament::section>
         <x-slot name="heading">بيانات عامة</x-slot>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div><span class="text-gray-500">رقم التذكرة:</span> <strong>{{ $ticket->ticket_number }}</strong></div>
+            <div><span class="text-gray-500">رقم المشروع:</span> <strong>{{ $ticket->ticket_number }}</strong></div>
+            <div><span class="text-gray-500">اسم المشروع:</span> {{ $ticket->project_name ?? '—' }}</div>
             <div><span class="text-gray-500">الحالة:</span> {{ $statusLabels[$ticket->status] ?? $ticket->status }}</div>
             <div><span class="text-gray-500">الأولوية:</span> {{ $priorityLabels[$ticket->priority] ?? $ticket->priority }}</div>
-            <div><span class="text-gray-500">نوع التذكرة:</span> {{ $typeLabels[$ticket->type] ?? $ticket->type }}</div>
+            <div><span class="text-gray-500">نوع المشروع:</span> {{ $typeLabels[$ticket->type] ?? $ticket->type }}</div>
             <div class="md:col-span-2"><span class="text-gray-500">العميل:</span> {{ $ticket->client_name }}</div>
             <div><span class="text-gray-500">موبايل العميل:</span> {{ $ticket->client_phone ?? '—' }}</div>
             <div><span class="text-gray-500">العنوان:</span> {{ $ticket->address ?? '—' }}</div>
-            <div><span class="text-gray-500">من أنشأ التذكرة:</span> {{ $ticket->creator?->name ?? '—' }}</div>
+            <div><span class="text-gray-500">من أنشأ المشروع:</span> {{ $ticket->creator?->name ?? '—' }}</div>
             <div><span class="text-gray-500">مدير الفنيين:</span> {{ $ticket->assignedManager?->name ?? '—' }}</div>
             <div><span class="text-gray-500">الفني المكلف:</span> {{ $ticket->assignedTechnician?->name ?? '—' }}</div>
             <div><span class="text-gray-500">موعد الجدولة:</span> {{ $ticket->scheduled_at?->format('d/m/Y H:i') ?? '—' }}</div>

@@ -17,8 +17,12 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        //
-    }
+   
+     public function boot(): void
+     {
+         if (str_contains(request()->getHost(), 'lhr.life')) {
+             \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+             \Illuminate\Support\Facades\URL::forceScheme('https');
+         }
+     }
 }

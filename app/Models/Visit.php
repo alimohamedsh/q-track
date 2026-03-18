@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\TicketEvaluation;
 
 class Visit extends Model
 {
@@ -51,5 +52,13 @@ class Visit extends Model
     public function failureReason(): BelongsTo
     {
         return $this->belongsTo(VisitFailureReason::class, 'failure_reason_id');
+    }
+
+    /**
+     * تقييم العميل المرتبط بهذه الزيارة (إن وُجد).
+     */
+    public function evaluation(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TicketEvaluation::class, 'visit_id');
     }
 }

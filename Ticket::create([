@@ -1,0 +1,23 @@
+[90m= [39m[
+    "[32mid[39m",
+    "[32muuid[39m",
+    "[32mticket_number[39m",
+    "[32mtype[39m",
+    "[32mclient_name[39m",
+    "[32mclient_address[39m",
+    "[32mclient_phone[39m",
+    "[32mlocation_url[39m",
+    "[32mlat[39m",
+    "[32mlng[39m",
+    "[32massigned_to[39m",
+    "[32massigned_manager_id[39m",
+    "[32mstatus[39m",
+    "[32mpriority[39m",
+    "[32mscheduled_at[39m",
+    "[32mdue_date[39m",
+    "[32mtracking_token[39m",
+    "[32mcreated_by[39m",
+    "[32mcreated_at[39m",
+    "[32mupdated_at[39m",
+  ]
+

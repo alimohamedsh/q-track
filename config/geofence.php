@@ -17,6 +17,6 @@ return [
     |
     */
 
-    'max_meters' => (int) env('GEOFENCE_MAX_METERS', 200),
+    'max_meters' => (int) env('GEOFENCE_MAX_METERS', 500),
 
 ];

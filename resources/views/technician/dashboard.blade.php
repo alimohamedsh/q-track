@@ -1,4 +1,4 @@
-{{-- لوحة تحكم الفني: التذكرة → "في الطريق" (بدون GPS) → "وصلت وبدء العمل" (مع GPS) → "إنهاء المهمة" --}}
+{{-- لوحة تحكم الفني: المشروع → "في الطريق" (بدون GPS) → "وصلت وبدء العمل" (مع GPS) → "إنهاء المهمة" --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl">
 <head>
@@ -27,7 +27,7 @@
 <body class="bg-gray-50 min-h-screen p-4 md:p-6 font-sans">
     <div class="max-w-4xl mx-auto">
         <div class="flex flex-wrap items-center gap-2 justify-between mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">التذاكر المكلف بها</h1>
+            <h1 class="text-2xl font-bold text-gray-800">المشاريع المكلف بها</h1>
             <div class="flex gap-2">
                 <form action="{{ route('logout', [], false) }}" method="POST" class="inline">
                     @csrf
@@ -41,6 +41,22 @@
             </div>
         </div>
 
+        {{-- بيانات الفني الحالي --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-xs text-gray-500">الفني الحالي</p>
+                    <p class="text-lg font-bold text-gray-900">{{ auth()->user()->name }}</p>
+                    <p class="text-sm text-gray-600">{{ auth()->user()->email }}</p>
+                </div>
+                <div class="text-left">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                        {{ auth()->user()->getRoleNames()->first() ?? 'technician' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
         {{-- رسائل النجاح أو الخطأ بعد تسجيل الدخول / إنهاء المهمة --}}
         @if (session('success'))
             <div class="mb-4 p-4 bg-green-100 text-green-800 rounded-lg">{{ session('success') }}</div>
@@ -49,10 +65,10 @@
             <div class="mb-4 p-4 bg-red-100 text-red-800 rounded-lg">{{ session('error') }}</div>
         @endif
 
-        {{-- مؤشرات سريعة: عدد التذاكر المفتوحة وتذاكر اليوم --}}
+        {{-- مؤشرات سريعة: عدد المشاريع المفتوحة وتذاكر اليوم --}}
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <p class="text-xs text-gray-500">إجمالي التذاكر المفتوحة</p>
+                <p class="text-xs text-gray-500">إجمالي المشاريع المفتوحة</p>
                 <p class="text-2xl font-bold text-gray-900">{{ $tickets->count() }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
@@ -61,14 +77,14 @@
             </div>
         </div>
 
-        {{-- كل تذكرة: لا زيارة → "في الطريق" | زيارة بدون arrived_at → "وصلت وبدء العمل" (GPS) | زيارة بـ arrived_at → "إنهاء المهمة" --}}
+        {{-- كل مشروع: لا زيارة → "في الطريق" | زيارة بدون arrived_at → "وصلت وبدء العمل" (GPS) | زيارة بـ arrived_at → "إنهاء المهمة" --}}
         @forelse($tickets as $ticket)
             @php $openVisit = $ticket->visits->first(); @endphp
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
                 <div class="flex flex-col gap-3">
                     <div class="flex items-center gap-2 flex-wrap">
                         <div>
-                            <span class="text-sm font-medium text-gray-500">رقم التذكرة</span>
+                            <span class="text-sm font-medium text-gray-500">رقم المشروع</span>
                             <p class="text-lg font-bold text-gray-900">{{ $ticket->ticket_number }}</p>
                         </div>
                         @if($ticket->due_date && $ticket->due_date->isPast())

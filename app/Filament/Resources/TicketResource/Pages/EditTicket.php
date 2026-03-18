@@ -14,7 +14,7 @@ class EditTicket extends EditRecord
     {
         return [
             Actions\Action::make('details')
-                ->label('تفاصيل التذكرة')
+                ->label('تفاصيل المشروع')
                 ->icon('heroicon-o-document-text')
                 ->url(fn () => TicketResource::getUrl('details', ['record' => $this->record])),
             Actions\DeleteAction::make(),
