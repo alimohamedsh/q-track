@@ -10,6 +10,7 @@ public/storage
 public/hot
 storage/*.key
 .env
+.env copy
 .env.backup
 .env.production
 Homestead.yaml

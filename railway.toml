@@ -1,0 +1,12 @@
+# Railway deploy (Dockerfile)
+# https://docs.railway.app/deploy/dockerfiles
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Runs once per deploy before traffic switches (migrations)
+releaseCommand = "php artisan migrate --force --no-interaction"
+# Laravel built-in health route (bootstrap/app.php → health: '/up')
+healthcheckPath = "/up"
+healthcheckTimeout = 60

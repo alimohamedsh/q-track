@@ -49,8 +49,8 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 RUN chmod -R 755 public storage
 
-# غير الـ EXPOSE لـ 8080 (البورت المشهور في Railway)
+# Railway يحقن $PORT؛ fallback للتشغيل المحلي
+ENV PORT=8080
 EXPOSE 8080
 
-# شغل السيرفر بتاع Laravel مباشرة
-CMD php artisan serve --host=0.0.0.0 --port=8080
+CMD ["sh", "-c", "exec php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]

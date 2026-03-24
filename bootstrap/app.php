@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Railway / reverse proxies: trust X-Forwarded-* so the request is seen as HTTPS
+        // (fixes session/CSRF cookies → avoids 419 on POST from mobile)
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
