@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Exceptions\GeofencingException;
 use App\Exceptions\VisitException;
+use App\Models\Ticket;
 use App\Models\Visit;
 use App\Models\VisitTaskResult;
-use App\Models\Ticket;
 use App\Notifications\VisitCompletedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
@@ -43,7 +43,7 @@ class VisitService
     public function recordOnTheWay(int $ticketId): Visit
     {
         $userId = Auth::id();
-        if (!$userId) {
+        if (! $userId) {
             throw new VisitException('يجب تسجيل الدخول أولاً.');
         }
 
@@ -60,13 +60,13 @@ class VisitService
         }
 
         return Visit::create([
-            'ticket_id'   => $ticketId,
-            'user_id'     => $userId,
+            'ticket_id' => $ticketId,
+            'user_id' => $userId,
             'check_in_at' => Carbon::now(),
-            'start_lat'   => null,
-            'start_lng'   => null,
-            'arrived_at'  => null,
-            'status'      => 'incomplete',
+            'start_lat' => null,
+            'start_lng' => null,
+            'arrived_at' => null,
+            'status' => 'incomplete',
         ]);
     }
 
@@ -76,7 +76,7 @@ class VisitService
     public function recordArrived(int $visitId, float $lat, float $lng): Visit
     {
         $userId = Auth::id();
-        if (!$userId) {
+        if (! $userId) {
             throw new VisitException('يجب تسجيل الدخول أولاً.');
         }
 
@@ -96,18 +96,22 @@ class VisitService
             throw new GeofencingException('موقع العميل غير محدد في التذكرة.');
         }
 
+        if ($this->isInvalidTechnicianGps($lat, $lng)) {
+            throw new GeofencingException('يجب تفعيل GPS وإرسال موقعك الفعلي (لا يُقبل موقع وهمي).');
+        }
+
         $distance = $this->calculateDistance($lat, $lng, $ticket->lat, $ticket->lng);
         $allowedMeters = $this->getAllowedDistanceMeters();
         if ($distance > $allowedMeters) {
             throw new GeofencingException(
-                'أنت بعيد عن موقع العميل. المسافة الحالية: ' . round($distance) . ' متر. يجب الوصول ضمن ' . $allowedMeters . ' متر.'
+                'أنت بعيد عن موقع العميل. المسافة الحالية: '.round($distance).' متر. يجب الوصول ضمن '.$allowedMeters.' متر.'
             );
         }
 
         $visit->update([
             'arrived_at' => Carbon::now(),
-            'start_lat'  => $lat,
-            'start_lng'  => $lng,
+            'start_lat' => $lat,
+            'start_lng' => $lng,
         ]);
 
         return $visit->fresh();
@@ -138,13 +142,29 @@ class VisitService
 
         return self::EARTH_RADIUS_METERS * $c;
     }
+
+    /**
+     * رفض إحداثيات وهمية (مثل 0,0 من تجاوز الواجهة القديم).
+     */
+    private function isInvalidTechnicianGps(float $lat, float $lng): bool
+    {
+        if (! is_finite($lat) || ! is_finite($lng)) {
+            return true;
+        }
+        if ($lat === 0.0 && $lng === 0.0) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * تسجيل نهاية الزيارة (Check-out): يتحقق من الجيوفنسينج، يحدّث الزيارة والتذكرة، يحفظ نتائج المهام والصور، ويُرسل إشعار للمدير
      */
     public function recordCheckOut(int $visitId, array $data, array $images = [])
     {
         $userId = Auth::id();
-        if (!$userId) {
+        if (! $userId) {
             throw new VisitException('يجب تسجيل الدخول أولاً.');
         }
 
@@ -167,17 +187,23 @@ class VisitService
             throw new GeofencingException('موقع العميل غير محدد في التذكرة.');
         }
 
+        $techLat = (float) $data['lat'];
+        $techLng = (float) $data['lng'];
+        if ($this->isInvalidTechnicianGps($techLat, $techLng)) {
+            throw new GeofencingException('يجب تفعيل GPS وإرسال موقعك الفعلي لإنهاء الزيارة (لا يُقبل موقع وهمي).');
+        }
+
         // Geofencing: التحقق من أن الفني ضمن المسافة المسموحة من موقع العميل عند Check-out
         $allowedMeters = $this->getAllowedDistanceMeters();
         $distance = $this->calculateDistance(
-            (float) $data['lat'],
-            (float) $data['lng'],
+            $techLat,
+            $techLng,
             $ticket->lat,
             $ticket->lng
         );
         if ($distance > $allowedMeters) {
             throw new GeofencingException(
-                'أنت بعيد جداً عن موقع العميل. المسافة الحالية: ' . round($distance) . ' متر.'
+                'أنت بعيد جداً عن موقع العميل. المسافة الحالية: '.round($distance).' متر.'
             );
         }
 
@@ -187,13 +213,13 @@ class VisitService
         $visitStatus = $status === 'incomplete' ? 'failed' : 'completed';
 
         $visit->update([
-            'check_out_at'      => Carbon::now(),
-            'end_lat'           => $data['lat'],
-            'end_lng'           => $data['lng'],
-            'status'            => $visitStatus,
-            'technician_notes'  => $data['notes'] ?? '',
+            'check_out_at' => Carbon::now(),
+            'end_lat' => $techLat,
+            'end_lng' => $techLng,
+            'status' => $visitStatus,
+            'technician_notes' => $data['notes'] ?? '',
             'failure_reason_id' => $data['failure_reason_id'] ?? null,
-            'failure_reason'    => $data['failure_reason'] ?? null,
+            'failure_reason' => $data['failure_reason'] ?? null,
         ]);
 
         // تحديث حالة التذكرة: مكتملة → closed، فشل/غير مكتملة → canceled
@@ -207,11 +233,11 @@ class VisitService
         foreach ($data['task_results'] ?? [] as $item) {
             VisitTaskResult::updateOrCreate(
                 [
-                    'visit_id'        => $visit->id,
-                    'ticket_task_id'  => $item['ticket_task_id'],
+                    'visit_id' => $visit->id,
+                    'ticket_task_id' => $item['ticket_task_id'],
                 ],
                 [
-                    'status'  => $item['status'],
+                    'status' => $item['status'],
                     'comment' => $item['comment'] ?? null,
                 ]
             );
@@ -229,7 +255,7 @@ class VisitService
                         $visit->attachments()->create([
                             'file_path' => $filePath,
                             'file_type' => 'image',
-                            'phase'     => 'check_out',
+                            'phase' => 'check_out',
                         ]);
                     }
                 } catch (\Throwable) {

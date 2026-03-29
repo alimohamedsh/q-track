@@ -10,8 +10,8 @@ use App\Services\VisitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 /**
@@ -52,8 +52,8 @@ class TechnicianDashboardController extends Controller
             ->view('technician.dashboard', compact('tickets'))
             ->withHeaders([
                 'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma'        => 'no-cache',
-                'Expires'       => '0',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
             ]);
     }
 
@@ -66,13 +66,14 @@ class TechnicianDashboardController extends Controller
 
         try {
             $this->visitService->recordOnTheWay((int) $request->ticket_id);
+
             return redirect()
-                ->to(route('technician.index', [], false) . '?_=' . time())
+                ->to(route('technician.index', [], false).'?_='.time())
                 ->with('success', 'تم تسجيل «في الطريق» بنجاح.')
                 ->withHeaders(['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache']);
         } catch (VisitException $e) {
             return redirect()
-                ->to(route('technician.index', [], false) . '?_=' . time())
+                ->to(route('technician.index', [], false).'?_='.time())
                 ->with('error', $e->getMessage())
                 ->withHeaders(['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache']);
         }
@@ -85,8 +86,8 @@ class TechnicianDashboardController extends Controller
     {
         $request->validate([
             'visit_id' => 'required|exists:visits,id',
-            'lat'      => 'required|numeric|between:-90,90',
-            'lng'      => 'required|numeric|between:-180,180',
+            'lat' => 'required|numeric|between:-90,90',
+            'lng' => 'required|numeric|between:-180,180',
         ]);
 
         try {
@@ -95,13 +96,14 @@ class TechnicianDashboardController extends Controller
                 (float) $request->lat,
                 (float) $request->lng
             );
+
             return redirect()
-                ->to(route('technician.index', [], false) . '?_=' . time())
+                ->to(route('technician.index', [], false).'?_='.time())
                 ->with('success', 'تم تسجيل الوصول وبدء العمل.')
                 ->withHeaders(['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache']);
         } catch (GeofencingException|VisitException $e) {
             return redirect()
-                ->to(route('technician.index', [], false) . '?_=' . time())
+                ->to(route('technician.index', [], false).'?_='.time())
                 ->with('error', $e->getMessage())
                 ->withHeaders(['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache']);
         }
@@ -113,15 +115,15 @@ class TechnicianDashboardController extends Controller
     public function checkOut(Request $request): RedirectResponse
     {
         $request->validate([
-            'visit_id'       => 'required|exists:visits,id',
-            'lat'            => 'required|numeric|between:-90,90',
-            'lng'            => 'required|numeric|between:-180,180',
-            'status'         => 'required|in:completed,incomplete',
-            'notes'          => 'nullable|string|max:1000',
+            'visit_id' => 'required|exists:visits,id',
+            'lat' => 'required|numeric|between:-90,90',
+            'lng' => 'required|numeric|between:-180,180',
+            'status' => 'required|in:completed,incomplete',
+            'notes' => 'nullable|string|max:1000',
             'failure_reason_id' => 'nullable|exists:visit_failure_reasons,id|required_if:status,incomplete',
-            'failure_reason'   => 'nullable|string|max:500',
-            'images'         => 'nullable|array',
-            'images.*'       => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
+            'failure_reason' => 'nullable|string|max:500',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
         ], [
             'failure_reason_id.required_if' => 'يجب اختيار سبب الفشل عند اختيار حالة غير مكتملة',
         ]);
@@ -133,8 +135,8 @@ class TechnicianDashboardController extends Controller
             if (is_array($data) && isset($data['status'])) {
                 $taskResults[] = [
                     'ticket_task_id' => (int) $taskId,
-                    'status'         => $data['status'],
-                    'comment'        => $data['comment'] ?? null,
+                    'status' => $data['status'],
+                    'comment' => $data['comment'] ?? null,
                 ];
             }
         }
@@ -143,13 +145,13 @@ class TechnicianDashboardController extends Controller
             $this->visitService->recordCheckOut(
                 (int) $request->visit_id,
                 [
-                    'lat'            => (float) $request->lat,
-                    'lng'            => (float) $request->lng,
-                    'status'         => $request->status,
-                    'notes'          => $request->notes,
+                    'lat' => (float) $request->lat,
+                    'lng' => (float) $request->lng,
+                    'status' => $request->status,
+                    'notes' => $request->notes,
                     'failure_reason_id' => $request->failure_reason_id,
-                    'failure_reason'   => $request->failure_reason,
-                    'task_results'   => $taskResults,
+                    'failure_reason' => $request->failure_reason,
+                    'task_results' => $taskResults,
                 ],
                 $images
             );
@@ -177,12 +179,20 @@ class TechnicianDashboardController extends Controller
         if ($visit->check_out_at) {
             return redirect()->to(route('technician.index', [], false))->with('error', 'تم إنهاء هذه الزيارة مسبقاً.');
         }
-        if (!$visit->arrived_at) {
+        if (! $visit->arrived_at) {
             return redirect()->to(route('technician.index', [], false))->with('error', 'يجب تسجيل «وصلت وبدء العمل» أولاً قبل إنهاء المهمة.');
+        }
+
+        $visit->loadMissing('ticket');
+        if ($visit->ticket->lat === null || $visit->ticket->lng === null) {
+            return redirect()
+                ->to(route('technician.index', [], false))
+                ->with('error', 'موقع العميل غير محدد على التذكرة. تواصل مع الإدارة لإضافة الإحداثيات من لوحة التحكم.');
         }
 
         $visit->load('ticket.tasks');
         $failureReasons = \App\Models\VisitFailureReason::orderBy('sort_order')->get();
+
         return view('technician.checkout', compact('visit', 'failureReasons'));
     }
 
@@ -206,6 +216,7 @@ class TechnicianDashboardController extends Controller
                 $valid[] = $file;
             }
         }
+
         return $valid;
     }
 }

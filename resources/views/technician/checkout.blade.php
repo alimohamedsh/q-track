@@ -63,6 +63,11 @@
 
         <h1 class="text-2xl font-bold text-gray-800 mb-6">إنهاء المهمة (Check-out)</h1>
         <p class="text-gray-600 mb-6">المشروع: {{ $visit->ticket->ticket_number }}</p>
+        @if($visit->ticket->lat === null || $visit->ticket->lng === null)
+            <div class="mb-4 p-4 bg-amber-50 text-amber-900 rounded-lg text-sm border border-amber-200">
+                موقع العميل غير محدد على هذه التذكرة. يجب على الإدارة إضافة رابط الخرائط من لوحة التحكم قبل إنهاء الزيارة من هنا.
+            </div>
+        @endif
 
         <form id="checkout-form" action="{{ route('technician.check-out', [], false) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
             @csrf
@@ -140,7 +145,7 @@
             document.querySelector('[name="failure_reason_id"]').required = this.value === 'incomplete';
         });
 
-        // عند الضغط على "إنهاء الزيارة": إن لم تكن lat/lng مملوءتين نطلب الموقع من المتصفح ثم نرسل النموذج
+        // جلب GPS في كل إرسال؛ لا إرسال بدون موقع فعلي (مطابق لسياسة «وصلت وبدء العمل»)
         document.getElementById('checkout-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;
@@ -154,23 +159,15 @@
                 form.submit();
             }
 
-            if (latInput.value && lngInput.value) {
-                doSubmit();
-                return;
-            }
-
             btn.disabled = true;
             btn.textContent = 'جاري جلب الموقع...';
+            latInput.value = '';
+            lngInput.value = '';
 
             if (!navigator.geolocation) {
-                if (confirm('المتصفح لا يدعم تحديد الموقع. هل تريد المتابعة بدون موقع؟ (سيتم حفظ 0,0)')) {
-                    latInput.value = '0';
-                    lngInput.value = '0';
-                    doSubmit();
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = 'إنهاء الزيارة';
-                }
+                alert('المتصفح لا يدعم تحديد الموقع. يجب تفعيل الموقع لإنهاء الزيارة من موقع العميل.');
+                btn.disabled = false;
+                btn.textContent = 'إنهاء الزيارة';
                 return;
             }
 
@@ -181,16 +178,11 @@
                     doSubmit();
                 },
                 (err) => {
-                    if (confirm('تعذر الحصول على الموقع. هل تريد المتابعة بدون موقع؟ (سيتم حفظ 0,0)')) {
-                        latInput.value = '0';
-                        lngInput.value = '0';
-                        doSubmit();
-                    } else {
-                        btn.disabled = false;
-                        btn.textContent = 'إنهاء الزيارة';
-                    }
+                    alert('تعذر الحصول على الموقع: ' + (err.message || 'يرجى السماح بالوصول للموقع وإعادة المحاولة.'));
+                    btn.disabled = false;
+                    btn.textContent = 'إنهاء الزيارة';
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         });
 

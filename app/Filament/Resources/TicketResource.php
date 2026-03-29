@@ -50,10 +50,10 @@ class TicketResource extends Resource
                             ->label('من أنشأ المشروع')
                             ->content(fn (Get $get) => User::find($get('created_by'))?->name ?? '—'),
                         Forms\Components\Placeholder::make('tracking_link')
-                        ->label('رابط التتبع (للعميل)')
-                        ->content(fn (Get $get) => $get('uuid') ? url('/track/' . $get('uuid')) : '—')
-                        ->visibleOn('edit'),
-                    Forms\Components\Placeholder::make('manager_info')
+                            ->label('رابط التتبع (للعميل)')
+                            ->content(fn (Get $get) => $get('uuid') ? url('/track/'.$get('uuid')) : '—')
+                            ->visibleOn('edit'),
+                        Forms\Components\Placeholder::make('manager_info')
                             ->label('مدير الفنيين')
                             ->content(fn (Get $get) => User::find($get('assigned_manager_id'))?->name ?? '—'),
                         Forms\Components\Placeholder::make('technician_info')
@@ -76,29 +76,29 @@ class TicketResource extends Resource
                     Forms\Components\Select::make('type')
                         ->label('النوع')
                         ->options([
-                            'maintenance'  => 'صيانة',
+                            'maintenance' => 'صيانة',
                             'installation' => 'تركيب',
-                            'visit'        => 'زيارة',
+                            'visit' => 'زيارة',
                         ])
                         ->required(),
                     Forms\Components\Select::make('status')
                         ->label('الحالة')
                         ->options([
-                            'open'             => 'مفتوحة',
-                            'in_progress'      => 'قيد التنفيذ',
-                            'on_hold'          => 'معلّقة',
+                            'open' => 'مفتوحة',
+                            'in_progress' => 'قيد التنفيذ',
+                            'on_hold' => 'معلّقة',
                             'revisit_required' => 'مطلوب إعادة زيارة',
-                            'closed'           => 'مغلقة',
-                            'canceled'         => 'ملغاة',
+                            'closed' => 'مغلقة',
+                            'canceled' => 'ملغاة',
                         ])
                         ->default('open')
                         ->required(),
                     Forms\Components\Select::make('priority')
                         ->label('الأولوية')
                         ->options([
-                            'low'    => 'منخفضة',
+                            'low' => 'منخفضة',
                             'medium' => 'متوسطة',
-                            'high'   => 'عالية',
+                            'high' => 'عالية',
                             'critical' => 'ضرورة قصوى',
                         ])
                         ->default('medium')
@@ -106,7 +106,7 @@ class TicketResource extends Resource
                     Forms\Components\Select::make('warranty_status')
                         ->label('حالة الضمان')
                         ->options([
-                            'in_warranty'     => 'داخل الضمان',
+                            'in_warranty' => 'داخل الضمان',
                             'out_of_warranty' => 'خارج الضمان',
                         ])
                         ->default('in_warranty')
@@ -152,6 +152,7 @@ class TicketResource extends Resource
                     Forms\Components\TextInput::make('location_url')
                         ->label('رابط جوجل ماب')
                         ->placeholder('الصق رابط Google Maps وسيتم استخراج الإحداثيات تلقائياً')
+                        ->helperText('مطلوب لاستخراج خط العرض/الطول؛ الجيوفنسينج عند الوصول وإنهاء العمل يعتمد عليهما.')
                         ->url()
                         ->maxLength(255)
                         ->live()
@@ -174,6 +175,9 @@ class TicketResource extends Resource
                             ->numeric()
                             ->step(0.00000001)
                             ->readOnly()
+                            ->required()
+                            ->minValue(-90)
+                            ->maxValue(90)
                             ->dehydrated()
                             ->dehydrateStateUsing(fn ($state) => $state ?: null),
                         Forms\Components\TextInput::make('lng')
@@ -181,6 +185,9 @@ class TicketResource extends Resource
                             ->numeric()
                             ->step(0.00000001)
                             ->readOnly()
+                            ->required()
+                            ->minValue(-180)
+                            ->maxValue(180)
                             ->dehydrated()
                             ->dehydrateStateUsing(fn ($state) => $state ?: null),
                     ]),
@@ -247,15 +254,15 @@ class TicketResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'installation' => 'تركيب',
-                        'maintenance'  => 'صيانة',
-                        'visit'        => 'زيارة',
-                        default       => $state,
+                        'maintenance' => 'صيانة',
+                        'visit' => 'زيارة',
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
                         'installation' => 'success',
-                        'maintenance'  => 'warning',
-                        'visit'        => 'info',
-                        default       => 'gray',
+                        'maintenance' => 'warning',
+                        'visit' => 'info',
+                        default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('العميل')
@@ -274,30 +281,30 @@ class TicketResource extends Resource
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'open'             => 'مفتوحة',
-                        'in_progress'      => 'قيد التنفيذ',
-                        'on_hold'          => 'معلّقة',
+                        'open' => 'مفتوحة',
+                        'in_progress' => 'قيد التنفيذ',
+                        'on_hold' => 'معلّقة',
                         'revisit_required' => 'إعادة زيارة',
-                        'closed'           => 'مغلقة',
-                        'canceled'         => 'ملغاة',
-                        default            => $state,
+                        'closed' => 'مغلقة',
+                        'canceled' => 'ملغاة',
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
-                        'open'             => 'info',
-                        'in_progress'      => 'warning',
-                        'on_hold'          => 'gray',
+                        'open' => 'info',
+                        'in_progress' => 'warning',
+                        'on_hold' => 'gray',
                         'revisit_required' => 'warning',
-                        'closed'           => 'success',
-                        'canceled'         => 'danger',
-                        default            => 'gray',
+                        'closed' => 'success',
+                        'canceled' => 'danger',
+                        default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('priority')
                     ->label('الأولوية')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'low'      => 'منخفضة',
-                        'medium'   => 'متوسطة',
-                        'high'     => 'عالية',
+                        'low' => 'منخفضة',
+                        'medium' => 'متوسطة',
+                        'high' => 'عالية',
                         'critical' => 'ضرورة قصوى',
                         default => $state,
                     }),
@@ -316,14 +323,14 @@ class TicketResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'active'           => 'نشطة (مفتوحة / قيد التنفيذ / معلّقة)',
-                        'archive'          => 'أرشيف (مغلقة / ملغاة)',
-                        'open'             => 'مفتوحة فقط',
-                        'in_progress'      => 'قيد التنفيذ',
-                        'on_hold'          => 'معلّقة',
+                        'active' => 'نشطة (مفتوحة / قيد التنفيذ / معلّقة)',
+                        'archive' => 'أرشيف (مغلقة / ملغاة)',
+                        'open' => 'مفتوحة فقط',
+                        'in_progress' => 'قيد التنفيذ',
+                        'on_hold' => 'معلّقة',
                         'revisit_required' => 'إعادة زيارة',
-                        'closed'           => 'مغلقة',
-                        'canceled'         => 'ملغاة',
+                        'closed' => 'مغلقة',
+                        'canceled' => 'ملغاة',
                     ])
                     ->default('active')
                     ->query(function (Builder $query, array $data): Builder {
@@ -337,6 +344,7 @@ class TicketResource extends Resource
                         if ($v) {
                             return $query->where('status', $v);
                         }
+
                         return $query;
                     }),
                 Tables\Filters\Filter::make('no_visits')
@@ -367,6 +375,7 @@ class TicketResource extends Resource
         }
         try {
             $dt = Carbon::parse($state);
+
             return $dt->year > 1900 ? $state : null;
         } catch (\Throwable) {
             return null;
@@ -378,7 +387,7 @@ class TicketResource extends Resource
         $query = parent::getEloquentQuery()->with(['creator', 'assignedManager', 'assignedTechnician']);
         $user = auth()->user();
 
-        if ($user && $user->hasRole('manager') && !$user->hasRole('admin')) {
+        if ($user && $user->hasRole('manager') && ! $user->hasRole('admin')) {
             $query->where('assigned_manager_id', $user->id);
         }
 
@@ -395,9 +404,9 @@ class TicketResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'   => Pages\ListTickets::route('/'),
-            'create'  => Pages\CreateTicket::route('/create'),
-            'edit'    => Pages\EditTicket::route('/{record}/edit'),
+            'index' => Pages\ListTickets::route('/'),
+            'create' => Pages\CreateTicket::route('/create'),
+            'edit' => Pages\EditTicket::route('/{record}/edit'),
             'details' => Pages\ViewTicketDetails::route('/{record}/details'),
         ];
     }
